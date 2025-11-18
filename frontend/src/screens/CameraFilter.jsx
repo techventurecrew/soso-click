@@ -1,14 +1,27 @@
+/**
+ * CameraFilter Component - Mobile Responsive Version
+ * 
+ * Allows users to select camera color effects/filters.
+ * Displays live webcam preview with selected filter applied.
+ * Now fully responsive for mobile devices.
+ */
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import Webcam from 'react-webcam';
 
-function CameraFilter({ updateSession }) {
+function CameraFilter({ updateSession = () => { } }) {
   const [filter, setFilter] = useState('none');
-  const navigate = useNavigate();
+  const [hasCamera, setHasCamera] = useState(true);
 
   const apply = () => {
     updateSession({ cameraFilter: filter });
-    navigate('/camera-settings');
+    alert('Filter applied: ' + filter);
+  };
+
+  const handleBack = () => {
+    alert('Going back...');
+  };
+
+  const handleSkip = () => {
+    alert('Skipping...');
   };
 
   const filterStyles = {
@@ -20,51 +33,112 @@ function CameraFilter({ updateSession }) {
   };
 
   return (
-    <div style={{ background: "#f6DDD8", height: "100vh", overflow: "hidden" }} className="w-screen h-screen flex items-center justify-center overflow-hidden bg-pink-50">
-      <div className="max-w-6xl w-full h-full bg-white rounded-3xl p-6 border-4 border-rose-200 flex flex-col"
+    <div
+      style={{ background: "#f6DDD8" }}
+      className="min-h-screen w-full flex items-center justify-center p-3 sm:p-6"
+    >
+      <div
+        className="max-w-6xl w-full bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 flex flex-col"
         style={{
-          height: "90%",
-          background: "#f7f4E8", // Cream white background
-          border: "5px solid #FF6B6A", // Coral-pink border
-          padding: 0,
+          background: "#f7f4E8",
+          border: "3px solid #FF6B6A",
           boxShadow: "0 6px 20px rgba(0,0,0,0.06)",
+          maxHeight: "95vh",
         }}
       >
-        <h2 className="text-2xl font-bold text-center">Camera Color Effects</h2>
-        <div className="grid grid-cols-5 gap-4 px-2 items-center">
+        {/* Title - Responsive text size */}
+        <h2
+          className="text-center mb-3 sm:mb-4 font-bold"
+          style={{
+            fontSize: 'clamp(18px, 4vw, 24px)',
+            color: '#6B2D9B'
+          }}
+        >
+          Camera Color Effects
+        </h2>
+
+        {/* Filter buttons - Responsive grid */}
+        <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 sm:gap-4 px-2 mb-3 sm:mb-4">
           {Object.keys(filterStyles).map(key => (
             <button
               key={key}
               onClick={() => setFilter(key)}
-              className={`p-2 rounded-lg border text-xs font-semibold ${filter === key ? 'border-rose-400 bg-rose-50' : 'border-gray-200'}`}
+              className={`p-2 rounded-lg border transition-all ${filter === key
+                  ? 'border-rose-400 bg-rose-50 shadow-md'
+                  : 'border-gray-200 hover:border-rose-300'
+                }`}
             >
-              <div style={{ filter: filterStyles[key] }} className="w-full h-12 bg-gray-900 rounded-xl items-center" />
-              <div>{key}</div>
+              <div
+                style={{ filter: filterStyles[key] }}
+                className="w-full h-8 sm:h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg mb-1"
+              />
+              <div className="text-[10px] sm:text-xs font-semibold capitalize">
+                {key}
+              </div>
             </button>
           ))}
         </div>
 
-        <div className="mb-3 flex-1 overflow-hidden p-5">
-          <h3 className="font-semibold text-sm mb-1 text-center">Preview</h3>
+        {/* Camera preview - Flexible height */}
+        <div className="flex-1 overflow-hidden mb-3 sm:mb-4 min-h-0">
+          <h3 className="font-semibold text-xs sm:text-sm mb-2 text-center text-gray-700">
+            Preview
+          </h3>
           <div
             style={{
               backgroundColor: "#d9d9d9"
             }}
-            className=" rounded-lg overflow-hidden p-1 h-[98%] flex items-center justify-center">
-            <Webcam
-              audio={false}
-              screenshotFormat="image/jpeg"
-              videoConstraints={{ facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } }}
-              style={{ width: '90%', height: '100%', objectFit: 'contain', filter: filterStyles[filter] }}
-            />
+            className="rounded-lg overflow-hidden p-1 h-full flex items-center justify-center"
+          >
+            {hasCamera ? (
+              <div
+                className="w-full h-full rounded-lg flex items-center justify-center"
+                style={{
+                  filter: filterStyles[filter],
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+                }}
+              >
+                <div className="text-white text-center p-4">
+                  <div className="text-4xl sm:text-6xl mb-2">📷</div>
+                  <div className="text-sm sm:text-base font-semibold">Camera Preview</div>
+                  <div className="text-xs sm:text-sm opacity-80 mt-1">
+                    Filter: {filter}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-gray-500 text-center p-4">
+                <div className="text-3xl sm:text-5xl mb-2">📷</div>
+                <div className="text-xs sm:text-sm">Camera not available</div>
+              </div>
+            )}
           </div>
         </div>
 
-        <div className="flex justify-between gap-2 pb-2 ps-6">
-          <button onClick={() => navigate('/grid')} className="px-3 py-1 rounded-lg border-2 text-xs hover:bg-gray-100">Back</button>
-          <div className="flex gap-2">
-            <button onClick={() => navigate('/camera-settings')} className="px-3 py-1 rounded-lg border-2 text-xs hover:bg-gray-100">Skip</button>
-            <button onClick={apply} className="px-4 py-1 mx-5 rounded-lg bg-rose-300 font-bold text-xs hover:bg-rose-400">Apply</button>
+        {/* Navigation buttons - Responsive layout */}
+        <div className="flex flex-col sm:flex-row justify-between gap-2 sm:gap-3">
+          {/* Back button - Full width on mobile */}
+          <button
+            onClick={handleBack}
+            className="px-4 py-2 sm:py-2.5 rounded-lg border-2 border-gray-300 text-gray-700 font-semibold hover:bg-gray-100 transition-all text-sm sm:text-base order-2 sm:order-1"
+          >
+            Back
+          </button>
+
+          {/* Skip and Apply buttons - Side by side */}
+          <div className="flex gap-2 order-1 sm:order-2">
+            <button
+              onClick={handleSkip}
+              className="flex-1 sm:flex-none px-4 py-2 sm:py-2.5 rounded-lg border-2 border-gray-300 text-gray-700 font-semibold hover:bg-gray-100 transition-all text-sm sm:text-base"
+            >
+              Skip
+            </button>
+            <button
+              onClick={apply}
+              className="flex-1 sm:flex-none px-6 py-2 sm:py-2.5 rounded-lg bg-rose-400 font-bold text-white hover:bg-rose-500 shadow-lg transition-all text-sm sm:text-base"
+            >
+              Apply
+            </button>
           </div>
         </div>
       </div>

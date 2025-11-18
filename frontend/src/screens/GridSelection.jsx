@@ -1,13 +1,31 @@
 /**
- * GridSelection Component - Mobile Responsive Version
+ * GridSelection Component
  * 
  * Allows users to select their preferred photo grid layout.
  * Displays visual previews of each grid option (SINGLE, V-2 CUT, 4 CUT, 6 CUT).
- * Now fully responsive for mobile devices.
+ * 
+ * Features:
+ * - Visual grid preview cards showing layout structure
+ * - Four grid options: Single (1x1), V-2 Cut (1x2), 4 Cut (2x2), 6 Cut (3x2)
+ * - Interactive selection with visual feedback
+ * - Decorative bear character with camera
+ * - Scattered hearts for aesthetic
+ * 
+ * Grid Options:
+ * - 4x6 Single: 1 photo, 1x1 grid
+ * - 2x4 Vertical 2 Cut: 2 photos, 1x2 grid
+ * - 4x6 4 Cut: 4 photos, 2x2 grid
+ * - 5x7 6 Cut: 6 photos, 3x2 grid
+ * 
+ * @param {Function} updateSession - Callback to save selected grid to session
+ * @returns {JSX.Element} Grid selection screen with visual previews
  */
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
-function GridSelection({ updateSession = () => { } }) {
+function GridSelection({ updateSession }) {
+  const navigate = useNavigate();
+  // Currently selected grid option ID
   const [selected, setSelected] = useState('4x6-single');
 
   // Available grid layouts with their properties
@@ -18,18 +36,19 @@ function GridSelection({ updateSession = () => { } }) {
     { id: '5x7-6cut', name: '6 CUT', desc: '6 grid cells', cols: 3, rows: 2 },
   ];
 
+  /**
+   * Handle Continue button click
+   * Saves selected grid to session and navigates to camera filter screen
+   */
   const handleContinue = () => {
     const gridData = grids.find(g => g.id === selected);
     updateSession({ selectedGrid: gridData });
-    alert('Grid selected: ' + gridData.name);
-  };
-
-  const handleBack = () => {
-    alert('Going back...');
+    navigate('/camera-filter');
   };
 
   /**
    * Render visual grid preview based on grid dimensions
+   * Creates a visual representation of the grid layout
    */
   const renderGridPreview = (grid) => {
     const cells = [];
@@ -39,10 +58,10 @@ function GridSelection({ updateSession = () => { } }) {
       cells.push(
         <div
           key={i}
-          className="bg-white rounded-lg border border-gray-400"
+          className="bg-white rounded-xl border border-gray-400 overflow-x-auto"
           style={{
             aspectRatio: grid.rows > grid.cols ? '3/4' : '4/3',
-            height: '100%',
+            height: '100%', // Ensure each cell covers the height of the grid container
             maxWidth: '100%'
           }}
         />
@@ -57,7 +76,7 @@ function GridSelection({ updateSession = () => { } }) {
           gridTemplateRows: `repeat(${grid.rows}, 1fr)`,
           width: '100%',
           height: '100%',
-          minHeight: '80px',
+          minHeight: '120px',
         }}
       >
         {cells}
@@ -66,60 +85,49 @@ function GridSelection({ updateSession = () => { } }) {
   };
 
   return (
-    <div
-      style={{ background: "#f6DDD8" }}
-      className="min-h-screen w-full flex items-center justify-center p-3 sm:p-6"
-    >
-      {/* Content panel - responsive sizing */}
+    // Main container with light pink background
+    <div style={{ background: "#f6DDD8", height: "100vh", overflow: "hidden" }} className="w-screen h-screen bg-pink-50 flex items-center justify-center overflow-hidden p-6">
+      {/* Content panel: Cream background with coral-pink border */}
       <div
         style={{
-          background: "#f7f4E8",
-          border: "3px solid #FF6B6A",
+          height: "90%",
+          background: "#f7f4E8", // Cream white background
+          border: "5px solid #FF6B6A", // Coral-pink border
+          padding: 0,
           boxShadow: "0 6px 20px rgba(0,0,0,0.06)",
         }}
-        className="relative w-full max-w-6xl bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 flex flex-col"
-      >
-        {/* Page title - responsive text size */}
-        <h2
-          className="text-center mb-4 sm:mb-6 px-2"
-          style={{
-            color: '#6B2D9B',
-            fontSize: 'clamp(18px, 5vw, 32px)',
-            fontWeight: 800,
-            lineHeight: 1.2
-          }}
-        >
+        className="relative w-full max-w-6xl h-full bg-white rounded-2xl p-6 border-4 border-rose-200 flex flex-col">
+        {/* Page title */}
+        <h2 className="text-center" style={{ color: '#6B2D9B', fontSize: 32, fontWeight: 800 }}>
           PLEASE CHOOSE YOUR FAVOURITE GRID
         </h2>
 
-        {/* Grid options - responsive layout (1 column on mobile, 2 on tablet+) */}
-        <div
-          className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 flex-1 overflow-y-auto mb-4"
+        {/* Grid options: 2x2 layout for first 4 options */}
+        <div className="grid grid-cols-2 gap-4 flex-1 overflow-y-auto overflow-x-hidden m-3"
           style={{
-            maxHeight: 'calc(100vh - 220px)',
-          }}
-        >
+            height: 'calc(100% - 50px)', // Adjust height to fit within the container
+          }}>
           {grids.map((grid) => (
             <button
               key={grid.id}
               onClick={() => setSelected(grid.id)}
-              className={`relative rounded-xl border-3 p-3 sm:p-4 transition-all flex flex-col items-center ${selected === grid.id
-                  ? 'border-rose-400 bg-rose-50 shadow-lg scale-[1.02] sm:scale-105'
-                  : 'border-gray-200 hover:border-rose-300 hover:bg-rose-50/50'
+              className={`relative rounded-2xl border-4 p-4 transition-all flex flex-col items-center ${selected === grid.id
+                ? 'border-rose-400 bg-rose-50 shadow-lg scale-105'
+                : 'border-gray-200 hover:border-rose-300 hover:bg-rose-50/50'
                 }`}
               style={{
                 background: selected === grid.id ? '#FFF0F5' : '#FFF7EE',
-                minHeight: '120px',
+                height: '100%', // Ensure buttons fit the height of the grid container
               }}
             >
-              {/* Visual grid preview */}
-              <div className="w-full flex-1 flex items-center justify-center mb-2 sm:mb-3">
+              {/* Visual grid preview: Shows layout structure */}
+              <div className="w-full h-full flex-1 flex items-center justify-center mb-3">
                 {renderGridPreview(grid)}
               </div>
 
-              {/* Grid name label - responsive text */}
+              {/* Grid name label */}
               <div
-                className="font-bold text-base sm:text-xl"
+                className="font-bold text-xl"
                 style={{
                   color: selected === grid.id ? '#D83A4A' : '#6B2D9B',
                 }}
@@ -130,39 +138,35 @@ function GridSelection({ updateSession = () => { } }) {
           ))}
         </div>
 
-        {/* Navigation buttons - responsive spacing */}
-        <div className="flex justify-between gap-2 sm:gap-3 mt-auto">
+        {/* Navigation buttons at bottom */}
+        <div className="flex justify-between m-3 gap-3">
+          {/* Back button: Returns to payment screen */}
           <button
-            onClick={handleBack}
-            className="px-4 sm:px-6 py-2 sm:py-3 rounded-lg border-2 border-gray-300 text-gray-700 font-semibold hover:bg-gray-100 transition-all text-sm sm:text-base"
+            onClick={() => navigate('/payment')}
+            className="px-6 py-3 rounded-lg border-2 border-gray-300 text-gray-700 font-semibold hover:bg-gray-100 transition-all"
           >
             Back
           </button>
 
+          {/* Continue button: Proceeds to next step with selected grid */}
           <button
             onClick={handleContinue}
-            className="px-4 sm:px-6 py-2 sm:py-3 rounded-lg bg-rose-400 font-bold text-white hover:bg-rose-500 shadow-lg transition-all text-sm sm:text-base"
+            className="px-6 py-3 rounded-lg bg-rose-400 font-bold text-white hover:bg-rose-500 shadow-lg transition-all"
           >
             Continue
           </button>
         </div>
 
-        {/* Decorative bear - hidden on mobile, visible on tablet+ */}
+        {/* Decorative bear character with camera (bottom-left) */}
         <img
           src="/images/teddy_left.png"
           alt="teddy bear with camera"
-          className="absolute hidden sm:block"
-          style={{
-            left: 10,
-            bottom: 90,
-            width: 'clamp(80px, 10vw, 120px)',
-            height: 'auto',
-            zIndex: 1
-          }}
+          className="absolute"
+          style={{ left: 10, bottom: 90, width: 120, height: 'auto', zIndex: 1 }}
         />
 
-        {/* Decorative hearts - smaller on mobile */}
-        <div className="absolute hidden sm:block" style={{ right: 20, bottom: 20, zIndex: 1 }}>
+        {/* Decorative hearts (bottom-right) */}
+        <div className="absolute" style={{ right: 20, bottom: 20, zIndex: 1 }}>
           <img
             src="/images/heart1-r.png"
             alt="heart"
