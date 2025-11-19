@@ -208,7 +208,7 @@ function CameraSettings({ updateSession, sessionData }) {
 
         <div className="grid grid-cols-2 gap-3 flex-1 overflow-hidden m-4">
           <div className="overflow-y-auto pr-2">
-            <label className="block font-semibold text-sm">Brightness</label>
+            {/* <label className="block font-semibold text-sm">Brightness</label>
             <input type="range" min="0.5" max="2" step="0.05" value={brightness} onChange={(e) => setBrightness(e.target.value)} className="w-full" />
             <label className="block font-semibold text-sm mt-2">Contrast</label>
             <input type="range" min="0.5" max="2" step="0.05" value={contrast} onChange={(e) => setContrast(e.target.value)} className="w-full" />
@@ -221,7 +221,7 @@ function CameraSettings({ updateSession, sessionData }) {
                 <input type="checkbox" checked={autoCapture} onChange={(e) => setAutoCapture(e.target.checked)} className="mr-2" />
                 5s Auto-Capture
               </label>
-            </div>
+            </div> */}
 
             {/* Show captured photos thumbnails */}
             {capturedPhotos.length > 0 && (

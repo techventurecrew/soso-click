@@ -155,9 +155,6 @@ function ShareScreen({ sessionData, updateSession }) {
     link.href = imageToDownload;
     link.download = `photobooth_${sessionData.sessionId}_composite.jpg`;
     link.click();
-
-    // Navigate to the thank you page after download
-    navigate('/thankyou');
   };
 
   /**

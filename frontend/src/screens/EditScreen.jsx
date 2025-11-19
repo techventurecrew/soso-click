@@ -1,5 +1,33 @@
+/**
+ * EditScreen Component
+ * 
+ * Photo editing and customization screen where users can:
+ * - Apply filters and presets to photos
+ * - Adjust brightness, contrast, saturation
+ * - Add stickers to photos by clicking on the canvas
+ * - Navigate between multiple photos in a grid layout
+ * - Generate composite image when all photos are edited
+ * 
+ * Features:
+ * - Canvas-based photo editing with real-time preview
+ * - Filter presets (Original, B&W, Vintage, Bright, Soft)
+ * - Manual adjustments via sliders
+ * - Sticker placement system (emoji stickers)
+ * - Photo navigation for multi-photo grids
+ * - Automatic composite generation for grid layouts
+ * 
+ * @param {Object} sessionData - Current session data including captured photos
+ * @param {Function} updateSession - Callback to update session data
+ * @returns {JSX.Element} Photo editing interface
+ */
+
 import React, { useRef, useEffect, useState } from 'react';
+
+
+
+
 import { useNavigate } from 'react-router-dom';
+import { createGridComposite } from '../utils/imageComposite';
 
 function EditScreen({ sessionData, updateSession }) {
   const navigate = useNavigate();
@@ -66,6 +94,7 @@ function EditScreen({ sessionData, updateSession }) {
 
       ctx.drawImage(img, 0, 0);
       ctx.filter = 'none';
+
     };
   };
 
@@ -219,11 +248,32 @@ function EditScreen({ sessionData, updateSession }) {
       return photos[idx];
     });
 
+    // Get grid layout from session data
+    const grid = sessionData.selectedGrid || { cols: 1, rows: 1, id: '4x6-single' };
+    const totalCells = grid.cols * grid.rows;
+
+    // If multiple photos and grid layout, create composite image
+    let compositeImage = null;
+    if (finalPhotos.length > 1 && totalCells > 1 && finalPhotos.length === totalCells) {
+      try {
+        compositeImage = await createGridComposite(finalPhotos, grid, 300, 3);
+        console.log('Composite image created successfully');
+      } catch (error) {
+        console.error('Error creating composite:', error);
+        // Continue without composite if error occurs
+      }
+    } else if (finalPhotos.length === 1) {
+      // Single photo - use it as the composite
+      compositeImage = finalPhotos[0];
+    }
+
     updateSession({
       editedPhotos: finalPhotos,
-      compositeImage: finalPhotos[0]
+      compositeImage: compositeImage || finalPhotos[0] // Fallback to first photo if no composite
     });
-    navigate('/share');
+
+    // Navigate to frame selection instead of share
+    navigate('/frame-selection');
   };
 
   const handlePreviousPhoto = () => {

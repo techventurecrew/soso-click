@@ -9,9 +9,10 @@
  * @param {string[]} photos - Array of base64 image data URLs
  * @param {Object} grid - Grid configuration { cols: number, rows: number, id: string }
  * @param {number} dpi - Print resolution (default 300 DPI)
+ * @param {number} marginPercent - Margin as percentage of cell size (default 2%)
  * @returns {Promise<string>} Base64 data URL of the composite image
  */
-export async function createGridComposite(photos, grid, dpi = 300) {
+export async function createGridComposite(photos, grid, dpi = 300, marginPercent = 2) {
   if (!photos || photos.length === 0) {
     throw new Error('No photos provided');
   }
@@ -63,9 +64,21 @@ export async function createGridComposite(photos, grid, dpi = 300) {
   const canvasWidth = Math.round(printSize.width * dpi);
   const canvasHeight = Math.round(printSize.height * dpi);
 
-  // Calculate cell dimensions
-  const cellWidth = canvasWidth / grid.cols;
-  const cellHeight = canvasHeight / grid.rows;
+  // Calculate margin in pixels (percentage of the smaller canvas dimension)
+  const marginSize = Math.round(Math.min(canvasWidth, canvasHeight) * (marginPercent / 100));
+
+  // Calculate total available space after accounting for all margins
+  // Margins: left edge + between columns + right edge = (cols + 1) margins horizontally
+  // Margins: top edge + between rows + bottom edge = (rows + 1) margins vertically
+  const totalHorizontalMargins = marginSize * (grid.cols + 1);
+  const totalVerticalMargins = marginSize * (grid.rows + 1);
+
+  const availableWidth = canvasWidth - totalHorizontalMargins;
+  const availableHeight = canvasHeight - totalVerticalMargins;
+
+  // Calculate actual cell size (all cells are equal size)
+  const cellWidth = availableWidth / grid.cols;
+  const cellHeight = availableHeight / grid.rows;
 
   // Create canvas
   const canvas = document.createElement('canvas');
@@ -94,37 +107,40 @@ export async function createGridComposite(photos, grid, dpi = 300) {
     // Vertical arrangement: Fill top to bottom, then left to right
     images.forEach((img, index) => {
       // Calculate row and column for vertical cell arrangement
-      // Row is determined by remainder (0 to rows-1)
-      // Column is determined by division (0 to cols-1)
       const row = index % grid.rows;
       const col = Math.floor(index / grid.rows);
 
-      // Calculate cell position on canvas
-      const x = col * cellWidth;
-      const y = row * cellHeight;
+      // Calculate cell position with equal margins from all edges
+      // Position = left/top margin + (cell size + margin) * index
+      const cellX = marginSize + col * (cellWidth + marginSize);
+      const cellY = marginSize + row * (cellHeight + marginSize);
 
-      // Calculate scaling to fill cell while maintaining aspect ratio
+      // All images fill the entire cell with equal size (crop to fit)
       const imgAspect = img.width / img.height;
       const cellAspect = cellWidth / cellHeight;
 
-      let drawWidth, drawHeight, drawX, drawY;
+      let sourceX, sourceY, sourceWidth, sourceHeight;
 
       if (imgAspect > cellAspect) {
-        // Image is wider than cell - fit to width
-        drawWidth = cellWidth;
-        drawHeight = cellWidth / imgAspect;
-        drawX = x;
-        drawY = y + (cellHeight - drawHeight) / 2;
+        // Image is wider - crop sides
+        sourceHeight = img.height;
+        sourceWidth = img.height * cellAspect;
+        sourceX = (img.width - sourceWidth) / 2;
+        sourceY = 0;
       } else {
-        // Image is taller than cell - fit to height
-        drawHeight = cellHeight;
-        drawWidth = cellHeight * imgAspect;
-        drawX = x + (cellWidth - drawWidth) / 2;
-        drawY = y;
+        // Image is taller - crop top/bottom
+        sourceWidth = img.width;
+        sourceHeight = img.width / cellAspect;
+        sourceX = 0;
+        sourceY = (img.height - sourceHeight) / 2;
       }
 
-      // Draw image centered in cell
-      ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
+      // Draw image to fill entire cell (all images same size)
+      ctx.drawImage(
+        img,
+        sourceX, sourceY, sourceWidth, sourceHeight,  // source crop
+        cellX, cellY, cellWidth, cellHeight            // destination fill
+      );
     });
 
     // Return composite as base64 data URL
@@ -134,4 +150,3 @@ export async function createGridComposite(photos, grid, dpi = 300) {
     throw error;
   }
 }
-

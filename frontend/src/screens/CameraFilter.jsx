@@ -98,16 +98,16 @@ function CameraFilter({ updateSession }) {
           {/* Filters Section - Right Side */}
           <div className="w-64 flex flex-col gap-3">
             <h3 className="font-semibold text-sm">Filters</h3>
-            <div className="flex flex-col gap-3 overflow-x-auto pb-2">
+            <div className="flex flex-col  gap-3 overflow-x-auto">
               {Object.keys(filterStyles).map(key => (
                 <button
                   key={key}
                   onClick={() => setFilter(key)}
-                  className={`flex-shrink-0 p-3 rounded-lg border-2 text-sm font-semibold transition-all ${filter === key ? 'border-rose-400 bg-rose-50' : 'border-gray-200 hover:border-gray-300'}`}
+                  className={`flex-shrink-0 p-3 rounded-lg border-2 text-sm font-semibold transition-all ${filter === key ? 'border-rose-500 bg-rose-100' : 'border-gray-200 hover:border-gray-300'}`}
                 >
                   <div
                     style={{ filter: filterStyles[key] }}
-                    className="w-full h-16 bg-gray-900 rounded-lg mb-2"
+                    className="w-[100%] h-16 bg-gray-900 rounded-lg "
                   />
                   <div className="capitalize text-xs">{key}</div>
                 </button>

@@ -12,6 +12,8 @@ import EditScreen from './screens/EditScreen';
 import ShareScreen from './screens/ShareScreen';
 import ThankYou from './screens/ThankYou';
 import PaymentQR from './screens/PaymentQR';
+import FrameSelectionScreen from './screens/FrameSelectionScreen';
+// import CombinedCamera from './screens/CombinedCamera';
 // Header removed: app uses full-screen pages without a nav/header
 
 function App() {
@@ -35,6 +37,10 @@ function App() {
           <Route path="/cash-password" element={<CashPassword updateSession={updateSession} />} />
           <Route path="/grid" element={<GridSelection updateSession={updateSession} />} />
           <Route path="/camera-filter" element={<CameraFilter updateSession={updateSession} />} />
+          <Route
+            path="/frame-selection"
+            element={<FrameSelectionScreen sessionData={sessionData} updateSession={updateSession} />}
+          />          {/* <Route path="/camera-combine" element={<CombinedCamera updateSession={updateSession} />} /> */}
           <Route path="/camera-settings" element={<CameraSettings sessionData={sessionData} updateSession={updateSession} />} />
           <Route path="/payment-full" element={<PaymentScreen sessionData={sessionData} updateSession={updateSession} />} />
           <Route path="/payment-qr" element={<PaymentQR sessionData={sessionData} updateSession={updateSession} />} />
