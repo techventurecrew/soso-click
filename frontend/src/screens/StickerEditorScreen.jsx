@@ -10,6 +10,7 @@ function StickerEditorScreen({ sessionData, updateSession }) {
     const compositeImage = sessionData?.compositeImage;
     const canvasRef = useRef(null);
     const imageContainerRef = useRef(null);
+    const imageRef = useRef(null);
 
     // Sticker library - replace these URLs with your actual sticker image paths
     const stickerLibrary = [
@@ -140,37 +141,52 @@ function StickerEditorScreen({ sessionData, updateSession }) {
                 // Draw base image
                 ctx.drawImage(img, 0, 0);
 
-                // Get container dimensions for scale calculation
+                // Get the actual displayed image dimensions and position
+                const displayImg = imageRef.current;
                 const container = imageContainerRef.current;
-                const scaleX = img.width / container.offsetWidth;
-                const scaleY = img.height / container.offsetHeight;
+
+                // Calculate the actual image dimensions as displayed
+                const displayedWidth = displayImg.offsetWidth;
+                const displayedHeight = displayImg.offsetHeight;
+
+                // Calculate the offset of the image within the container (due to centering)
+                const imgOffsetX = (container.offsetWidth - displayedWidth) / 2;
+                const imgOffsetY = (container.offsetHeight - displayedHeight) / 2;
+
+                // Scale factors from displayed size to actual image size
+                const scaleX = img.width / displayedWidth;
+                const scaleY = img.height / displayedHeight;
 
                 // Draw each sticker
                 stickers.forEach(sticker => {
                     const stickerImg = new Image();
+                    stickerImg.onload = () => {
+                        ctx.save();
+
+                        // Adjust sticker position: subtract offset first, then scale
+                        const actualX = (sticker.x - imgOffsetX) * scaleX;
+                        const actualY = (sticker.y - imgOffsetY) * scaleY;
+                        const actualWidth = sticker.width * scaleX;
+                        const actualHeight = sticker.height * scaleY;
+
+                        ctx.translate(actualX + actualWidth / 2, actualY + actualHeight / 2);
+                        ctx.rotate((sticker.rotation * Math.PI) / 180);
+                        ctx.drawImage(
+                            stickerImg,
+                            -actualWidth / 2,
+                            -actualHeight / 2,
+                            actualWidth,
+                            actualHeight
+                        );
+                        ctx.restore();
+                    };
                     stickerImg.src = sticker.url;
-
-                    ctx.save();
-
-                    // Adjust sticker position based on actual image size
-                    const actualX = sticker.x * scaleX;
-                    const actualY = sticker.y * scaleY;
-                    const actualWidth = sticker.width * scaleX;
-                    const actualHeight = sticker.height * scaleY;
-
-                    ctx.translate(actualX + actualWidth / 2, actualY + actualHeight / 2);
-                    ctx.rotate((sticker.rotation * Math.PI) / 180);
-                    ctx.drawImage(
-                        stickerImg,
-                        -actualWidth / 2,
-                        -actualHeight / 2,
-                        actualWidth,
-                        actualHeight
-                    );
-                    ctx.restore();
                 });
 
-                resolve(canvas.toDataURL('image/jpeg', 0.95));
+                // Wait a bit for all stickers to load, then resolve
+                setTimeout(() => {
+                    resolve(canvas.toDataURL('image/jpeg', 0.95));
+                }, 500);
             };
             img.src = compositeImage;
         });
@@ -261,6 +277,7 @@ function StickerEditorScreen({ sessionData, updateSession }) {
                                 onClick={() => setSelectedStickerId(null)}
                             >
                                 <img
+                                    ref={imageRef}
                                     src={compositeImage}
                                     alt="Your photo"
                                     style={{

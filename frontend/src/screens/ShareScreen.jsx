@@ -262,7 +262,21 @@ function ShareScreen({ sessionData, updateSession }) {
               {printStatus === 'idle' && (
                 <button
                   onClick={handlePrint}
-                  className="btn-primary w-full text-sm py-2"
+                  className="btn-primary w-full text-sm "
+                  style={{
+                    fontFamily: 'sans-serif',
+                    background: "#FFB6C1", // Light pink background
+                    padding: "18px 60px",
+                    borderRadius: 18,
+                    boxShadow: "0 8px 20px rgba(246,100,130,0.18)", // Subtle shadow
+                    border: "3px solid #FF6B6A", // Coral-pink border
+                    fontSize: 20,
+                    fontWeight: 800,
+                    color: "#D83A4A", // Deep pink text
+                    cursor: "pointer",
+                    transition: "all 0.3s ease",
+                    textShadow: "2px 2px 2px 5pxrgba(216, 58, 74, 0.7)"
+                  }}
                 >
                   Print Photo Now
                 </button>
@@ -318,7 +332,7 @@ function ShareScreen({ sessionData, updateSession }) {
                 </>
               ) : (
                 /* Loading state: Shows while generating download URL */
-                <div className="text-center py-3">
+                <div className="text-center py-1">
                   <div className="animate-spin text-3xl mb-1">⚙️</div>
                   <p className="text-sm">Generating link...</p>
                 </div>
@@ -328,6 +342,20 @@ function ShareScreen({ sessionData, updateSession }) {
               <button
                 onClick={handleDownload}
                 className="btn-secondary w-full text-sm py-2"
+                style={{
+                  fontFamily: 'sans-serif',
+                  background: "#FFB6C1", // Light pink background
+                  padding: "12px 80px",
+                  borderRadius: 18,
+                  boxShadow: "0 8px 20px rgba(246,100,130,0.18)", // Subtle shadow
+                  border: "3px solid #FF6B6A", // Coral-pink border
+                  fontSize: 20,
+                  fontWeight: 800,
+                  color: "#D83A4A", // Deep pink text
+                  cursor: "pointer",
+                  transition: "all 0.3s ease",
+                  textShadow: "2px 2px 2px 5pxrgba(216, 58, 74, 0.7)"
+                }}
               >
                 💾 Download Composite
               </button>
@@ -339,7 +367,7 @@ function ShareScreen({ sessionData, updateSession }) {
         <div className="text-center mt-1">
           <button
             onClick={handleStartOver}
-            className="text-xs py-1 px-3 rounded-lg bg-rose-300 font-bold hover:bg-rose-400"
+            className="text-zm py-3 px-5 mb-3 rounded-lg bg-rose-300 font-bold hover:bg-rose-400"
           >
             Another 📸
           </button>
