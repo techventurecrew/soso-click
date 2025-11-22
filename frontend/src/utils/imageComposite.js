@@ -1,6 +1,75 @@
 /**
+ * Gets page size configuration based on grid layout
+ * Auto-configures page dimensions according to standard photo print sizes
+ * 
+ * @param {Object} grid - Grid configuration { cols: number, rows: number, id: string }
+ * @returns {Object} Page size configuration { widthInches, heightInches, pageSize }
+ */
+export function getPageSizeFromGrid(grid) {
+  if (!grid) {
+    return { widthInches: 4, heightInches: 6, pageSize: '4x6' };
+  }
+
+  const gridId = typeof grid === 'string' ? grid : grid.id;
+
+  // Map grid IDs to standard photo print sizes
+  const gridToPageSize = {
+    '5x5-single': { widthInches: 5, heightInches: 5, pageSize: '5x5' },
+    '4x6-single': { widthInches: 4, heightInches: 6, pageSize: '4x6' },
+    '2x4-vertical-2': { widthInches: 2, heightInches: 4, pageSize: '2x4' },
+    '4x6-4cut': { widthInches: 4, heightInches: 6, pageSize: '4x6' },
+    '5x7-6cut': { widthInches: 5, heightInches: 7, pageSize: '5x7' }
+  };
+
+  // If exact match found, use it
+  if (gridToPageSize[gridId]) {
+    return gridToPageSize[gridId];
+  }
+
+  // Calculate based on grid dimensions if no exact match
+  const cols = grid.cols || 1;
+  const rows = grid.rows || 1;
+
+  // Default cell size: 2x3 inches (standard photo cell)
+  const cellWidth = 2;
+  const cellHeight = 3;
+
+  // Calculate total page size with margins
+  const margin = 0.1; // 0.1 inch margin between cells
+  const widthInches = (cellWidth * cols) + (margin * (cols - 1));
+  const heightInches = (cellHeight * rows) + (margin * (rows - 1));
+
+  // Round to nearest standard size
+  const standardSizes = [
+    { w: 2, h: 4, name: '2x4' },
+    { w: 4, h: 6, name: '4x6' },
+    { w: 5, h: 7, name: '5x7' },
+    { w: 8, h: 10, name: '8x10' }
+  ];
+
+  // Find closest standard size
+  let closest = standardSizes[0];
+  let minDiff = Math.abs(widthInches - closest.w) + Math.abs(heightInches - closest.h);
+
+  standardSizes.forEach(size => {
+    const diff = Math.abs(widthInches - size.w) + Math.abs(heightInches - size.h);
+    if (diff < minDiff) {
+      minDiff = diff;
+      closest = size;
+    }
+  });
+
+  return {
+    widthInches: closest.w,
+    heightInches: closest.h,
+    pageSize: closest.name
+  };
+}
+
+/**
  * Creates a composite image from multiple photos arranged in a grid layout
  * with dynamic canvas sizing that preserves original image aspect ratios
+ * Auto-configures page size based on grid layout
  * 
  * Photo arrangement: Vertical cell arrangement (fills top to bottom, then left to right)
  * Example for 2x2 grid:
@@ -11,11 +80,11 @@
  * @param {Object} grid - Grid configuration { cols: number, rows: number, id: string }
  * @param {number} dpi - Print resolution (default 300 DPI)
  * @param {number} marginPercent - Margin as percentage of cell size (default 2%)
- * @param {number} maxCellWidth - Maximum cell width in inches (default 3)
+ * @param {number} maxCellWidth - Maximum cell width in inches (optional, auto-calculated if not provided)
  * @returns {Promise<string>} Base64 data URL of the composite image
  */
 
-export async function createGridComposite(photos, grid, dpi = 300, marginPercent = 2, maxCellWidth = 3) {
+export async function createGridComposite(photos, grid, dpi = 300, marginPercent = 2, maxCellWidth = null) {
   if (!photos || photos.length === 0) {
     throw new Error('No photos provided');
   }
@@ -27,6 +96,18 @@ export async function createGridComposite(photos, grid, dpi = 300, marginPercent
   const totalCells = grid.cols * grid.rows;
   if (photos.length !== totalCells) {
     throw new Error(`Expected ${totalCells} photos, got ${photos.length}`);
+  }
+
+  // Auto-configure page size based on grid
+  const pageConfig = getPageSizeFromGrid(grid);
+
+  // Auto-calculate maxCellWidth if not provided
+  if (maxCellWidth === null) {
+    // Calculate cell size based on page dimensions and grid layout
+    const marginInches = 0.1; // 0.1 inch margin between cells
+    const availableWidth = pageConfig.widthInches - (marginInches * (grid.cols - 1));
+    const availableHeight = pageConfig.heightInches - (marginInches * (grid.rows - 1));
+    maxCellWidth = Math.min(availableWidth / grid.cols, availableHeight / grid.rows);
   }
 
   // Load all images first to get their dimensions

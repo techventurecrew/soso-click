@@ -138,6 +138,40 @@ function CameraSettings({ updateSession, sessionData }) {
     navigate('/camera-filter');
   };
 
+  // Get camera filter from session data (set in CameraFilter.jsx)
+  const getCameraFilter = () => {
+    const filterStyles = {
+      none: 'none',
+      sepia: 'sepia(0.6)',
+      vintage: 'sepia(0.4) contrast(0.9) saturate(0.8)',
+      cool: 'hue-rotate(200deg) saturate(1.1)',
+      mono: 'grayscale(1)',
+    };
+    const cameraFilter = sessionData?.cameraFilter || 'none';
+    const cameraBrightness = sessionData?.brightness || 100;
+    const baseFilter = filterStyles[cameraFilter];
+    // Convert percentage brightness to multiplier (100% = 1.0)
+    const cameraBrightnessMultiplier = cameraBrightness / 100;
+    // Combine with camera settings brightness (multiply them)
+    const combinedBrightness = cameraBrightnessMultiplier * parseFloat(brightness);
+
+    // Build filter string with base filter and combined brightness
+    let filterParts = [];
+    if (baseFilter !== 'none') {
+      filterParts.push(baseFilter);
+    }
+    filterParts.push(`brightness(${combinedBrightness})`);
+    filterParts.push(`contrast(${contrast})`);
+    filterParts.push(`saturate(${saturation})`);
+
+    return filterParts.join(' ');
+  };
+
+  // Combine camera filter with camera settings for preview and capture
+  const getCombinedFilter = () => {
+    return getCameraFilter();
+  };
+
   const handleCapture = async () => {
     const settings = { brightness: parseFloat(brightness), contrast: parseFloat(contrast), saturation: parseFloat(saturation), sharpness: parseFloat(sharpness), autoCapture };
     updateSession({ cameraSettings: settings });
@@ -156,7 +190,8 @@ function CameraSettings({ updateSession, sessionData }) {
 
         canvas.width = w;
         canvas.height = h;
-        ctx.filter = `brightness(${settings.brightness}) contrast(${settings.contrast}) saturate(${settings.saturation})`;
+        // Apply both camera filter and camera settings
+        ctx.filter = getCombinedFilter();
         ctx.drawImage(img, 0, 0);
 
         const photoData = canvas.toDataURL('image/jpeg', 0.95);
@@ -181,7 +216,7 @@ function CameraSettings({ updateSession, sessionData }) {
     }
   };
 
-  const filter = `brightness(${brightness}) contrast(${contrast}) saturate(${saturation})`;
+  const filter = getCombinedFilter();
 
   return (
     <div style={{ background: "#f6DDD8", height: "100vh", overflow: "hidden" }} className="w-screen h-screen flex items-center justify-center overflow-hidden">

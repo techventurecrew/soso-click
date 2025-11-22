@@ -23,6 +23,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import { FallingSparkles, FloatingBubbles, FallingHearts, ConfettiRain, TwinklingStars } from '../components/Decoration';
+import { detectPrinters, getDefaultPrinter, getStoredPrinter, saveSelectedPrinter } from '../utils/printerDetection';
+import { getPageSizeFromGrid } from '../utils/imageComposite';
 
 function ShareScreen({ sessionData, updateSession }) {
   const navigate = useNavigate();
@@ -36,6 +38,12 @@ function ShareScreen({ sessionData, updateSession }) {
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   // Countdown timer for auto-redirect
   const [countdown, setCountdown] = useState(10);
+  // Available printers list
+  const [availablePrinters, setAvailablePrinters] = useState([]);
+  // Selected printer
+  const [selectedPrinter, setSelectedPrinter] = useState(null);
+  // Page size configuration
+  const [pageSizeConfig, setPageSizeConfig] = useState(null);
 
   // Get edited photos: Support both legacy single photo and new multi-photo format
   const editedPhotos = sessionData.editedPhotos || (sessionData.editedPhoto ? [sessionData.editedPhoto] : []);
@@ -69,6 +77,37 @@ function ShareScreen({ sessionData, updateSession }) {
       clearInterval(countdownInterval);
     };
   }, [navigate]);
+
+  // Auto-detect printers on component mount
+  useEffect(() => {
+    const initializePrinters = async () => {
+      try {
+        const printers = await detectPrinters();
+        setAvailablePrinters(printers);
+
+        // Get stored printer or use default
+        const storedPrinter = getStoredPrinter();
+        const defaultPrinter = storedPrinter || getDefaultPrinter(printers);
+        setSelectedPrinter(defaultPrinter);
+      } catch (error) {
+        console.error('Error initializing printers:', error);
+        // Set default printer on error
+        setSelectedPrinter({ name: 'Default Printer', status: 'Unknown' });
+      }
+    };
+
+    initializePrinters();
+  }, []);
+
+  // Auto-configure page size based on grid
+  useEffect(() => {
+    const grid = sessionData.selectedGrid;
+    if (grid) {
+      const config = getPageSizeFromGrid(grid);
+      setPageSizeConfig(config);
+      console.log('Auto-configured page size:', config);
+    }
+  }, [sessionData.selectedGrid]);
 
   // Auto-save composite image to server when component mounts or image changes
   useEffect(() => {
@@ -128,7 +167,7 @@ function ShareScreen({ sessionData, updateSession }) {
 
   /**
    * Handle Print button click
-   * Sends print request to backend API with saved photo filename
+   * Sends print request to backend API with saved photo filename, printer, and page size
    * Updates print status to provide user feedback
    */
   const handlePrint = async () => {
@@ -146,14 +185,27 @@ function ShareScreen({ sessionData, updateSession }) {
         await new Promise(resolve => setTimeout(resolve, 500));
       }
 
-      // Send print request to backend API
+      // Get filename for printing
+      const filename = savedFilenames[0];
+
+      // Get grid for page size configuration
+      const grid = sessionData.selectedGrid || { cols: 1, rows: 1, id: '4x6-single' };
+
+      // Get page size configuration
+      const pageSize = pageSizeConfig?.pageSize || getPageSizeFromGrid(grid).pageSize;
+
+      // Send print request to backend API with printer and page size
+      // Backend will construct the filepath from filename
       const response = await fetch('http://localhost:3001/api/print-photo', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          filenames: savedFilenames.length > 0 ? [savedFilenames[0]] : [],
+          filename: filename,
+          printerName: selectedPrinter?.name || 'Default',
+          pageSize: pageSize,
+          grid: grid,
           sessionId: sessionData.sessionId,
         }),
       });
@@ -210,7 +262,7 @@ function ShareScreen({ sessionData, updateSession }) {
       <TwinklingStars />
       <div
         style={{
-          height: "80%",
+          height: "90%",
           background: "#f7f4E8", // Cream white background
           border: "5px solid #FF6B6A", // Coral-pink border
           padding: 0,
@@ -258,6 +310,22 @@ function ShareScreen({ sessionData, updateSession }) {
             {/* Print section */}
             <div className="card p-3">
               <h3 className="text-sm font-bold mb-2 text-center">🖨️ Print Now</h3>
+
+              {/* Printer and page size info */}
+              {selectedPrinter && (
+                <div className="mb-2 p-2 bg-gray-50 rounded text-xs">
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="font-semibold">Printer:</span>
+                    <span className="text-gray-700">{selectedPrinter.name}</span>
+                  </div>
+                  {pageSizeConfig && (
+                    <div className="flex justify-between items-center">
+                      <span className="font-semibold">Page Size:</span>
+                      <span className="text-gray-700">{pageSizeConfig.pageSize}</span>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {printStatus === 'idle' && (
                 <button

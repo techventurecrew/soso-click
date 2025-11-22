@@ -14,6 +14,24 @@ function CameraScreen({ sessionData, updateSession }) {
   const [selectedFrame, setSelectedFrame] = useState('none');
   const [applyingFilter, setApplyingFilter] = useState(false);
 
+  const filterStyles = {
+    none: 'none',
+    sepia: 'sepia(0.6)',
+    vintage: 'sepia(0.4) contrast(0.9) saturate(0.8)',
+    cool: 'hue-rotate(200deg) saturate(1.1)',
+    mono: 'grayscale(1)',
+  };
+
+  const getCombinedFilter = () => {
+    const cameraFilter = sessionData.cameraFilter || 'none';
+    const brightness = sessionData.brightness || 100;
+    const baseFilter = filterStyles[cameraFilter];
+    const brightnessFilter = `brightness(${brightness}%)`;
+    return baseFilter === 'none' ? brightnessFilter : `${baseFilter} ${brightnessFilter}`;
+  };
+
+
+
   useEffect(() => {
     if (sessionData.paymentStatus !== 'completed') {
       navigate('/payment');
@@ -99,30 +117,38 @@ function CameraScreen({ sessionData, updateSession }) {
     const grid = sessionData.selectedGrid || { cols: 1, rows: 1 };
     const totalCells = grid.cols * grid.rows;
 
-    // For multi-cell grids, capture full image for each cell
-    if (totalCells > 1) {
-      setCapturedImages(prev => [...prev, imageSrc]);
-      setCurrentCell(prev => prev + 1);
-      setCountdown(null);
-      // If more cells to capture, start next countdown after a short delay
-      if (currentCell + 1 < totalCells) {
-        setTimeout(() => setCountdown(3), 1000);
-      }
-    } else {
-      // Single cell: crop if needed, but for now keep full image
-      const img = new Image();
-      img.src = imageSrc;
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        canvas.width = img.width;
-        canvas.height = img.height;
-        ctx.drawImage(img, 0, 0);
-        const cropped = canvas.toDataURL('image/jpeg', 0.95);
-        setCapturedImages([cropped]);
+    const img = new Image();
+    img.src = imageSrc;
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = img.width;
+      canvas.height = img.height;
+
+      // Apply the filter to the canvas context
+      ctx.filter = getCombinedFilter();
+
+      // Draw the image onto the canvas
+      ctx.drawImage(img, 0, 0);
+
+      // Get the new base64 image with the filter applied
+      const filteredImageSrc = canvas.toDataURL('image/jpeg', 0.95);
+
+      // For multi-cell grids, capture full image for each cell
+      if (totalCells > 1) {
+        setCapturedImages(prev => [...prev, filteredImageSrc]);
+        setCurrentCell(prev => prev + 1);
         setCountdown(null);
-      };
-    }
+        // If more cells to capture, start next countdown after a short delay
+        if (currentCell + 1 < totalCells) {
+          setTimeout(() => setCountdown(3), 1000);
+        }
+      } else {
+        // Single cell: crop if needed, but for now keep full image
+        setCapturedImages([filteredImageSrc]);
+        setCountdown(null);
+      }
+    };
   };
 
   const handleRetake = () => {
@@ -205,6 +231,11 @@ function CameraScreen({ sessionData, updateSession }) {
                     );
                   } else {
                     // Show camera feed
+                    const videoConstraints = {
+                      width: 1280,
+                      height: 720,
+                      facingMode: 'user',
+                    };
                     return (
                       <div className={`relative h-full w-full ${frames[selectedFrame].style}`}>
                         {cameraAvailable ? (
@@ -212,30 +243,15 @@ function CameraScreen({ sessionData, updateSession }) {
                             ref={webcamRef}
                             audio={false}
                             screenshotFormat="image/jpeg"
-                            videoConstraints={{
-                              width: 1280,
-                              height: 720,
-                              facingMode: 'user',
-                            }}
+                            videoConstraints={videoConstraints}
                             className="w-full h-auto"
                             style={{
-                              filter: (() => {
-                                const cf = sessionData.cameraFilter || 'none';
-                                const cs = sessionData.cameraSettings || {};
-                                const map = {
-                                  none: 'none',
-                                  sepia: 'sepia(0.6)',
-                                  vintage: 'sepia(0.4) contrast(0.9) saturate(0.8)',
-                                  cool: 'hue-rotate(200deg) saturate(1.1)',
-                                  mono: 'grayscale(1)'
-                                };
-                                const base = map[cf] || 'none';
-                                const b = cs.brightness || 1;
-                                const con = cs.contrast || 1;
-                                const sat = cs.saturation || 1;
-                                const sharp = cs.sharpness || 0;
-                                return `${base} brightness(${b}) contrast(${con}) saturate(${sat}) blur(${Math.max(0, 5 - sharp)}px)`;
-                              })(),
+                              filter: getCombinedFilter(),
+                            }}
+                            onUserMedia={() => setCameraAvailable(true)}
+                            onUserMediaError={(error) => {
+                              setCameraAvailable(false);
+                              setCameraError(error?.message || 'Camera access denied');
                             }}
                           />
                         ) : (

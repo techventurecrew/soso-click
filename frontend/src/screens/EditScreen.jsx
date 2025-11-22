@@ -84,7 +84,22 @@ function EditScreen({ sessionData, updateSession }) {
       canvas.width = img.width;
       canvas.height = img.height;
 
+      // Apply camera filters first
+      const cameraFilter = sessionData.cameraFilter || 'none';
+      const brightness = sessionData.brightness || 100;
+      const filterStyles = {
+        none: '',
+        sepia: 'sepia(0.6)',
+        vintage: 'sepia(0.4) contrast(0.9) saturate(0.8)',
+        cool: 'hue-rotate(200deg) saturate(1.1)',
+        mono: 'grayscale(1)',
+      };
+      const baseFilter = filterStyles[cameraFilter];
+      const brightnessFilter = `brightness(${brightness}%)`;
+      const cameraFilters = baseFilter === '' ? brightnessFilter : `${baseFilter} ${brightnessFilter}`;
+
       ctx.filter = `
+        ${cameraFilters}
         brightness(${filters.brightness})
         contrast(${filters.contrast})
         saturate(${filters.saturation})
@@ -269,7 +284,8 @@ function EditScreen({ sessionData, updateSession }) {
 
     updateSession({
       editedPhotos: finalPhotos,
-      compositeImage: compositeImage || finalPhotos[0] // Fallback to first photo if no composite
+      compositeImage: compositeImage || finalPhotos[0], // Fallback to first photo if no composite
+      selectedGrid: grid // Store grid info for page size configuration
     });
 
     // Navigate to frame selection instead of share
