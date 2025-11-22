@@ -2,8 +2,41 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FallingSparkles, FloatingBubbles, FallingHearts, ConfettiRain, TwinklingStars } from '../components/Decoration';
 
-const Page2 = () => {
+const Page2 = ({ updateSession }) => {
   const navigate = useNavigate();
+  const PRICE = 200;
+
+  const openRazorpay = () => {
+    const options = {
+      key: "rzp_test_RimfJf1PyS9dtx",
+      amount: PRICE * 100,
+      currency: "INR",
+      name: "Your App",
+      description: "UPI QR Payment",
+      image: "/images/logo.png",
+
+      handler: function (response) {
+        // Payment Success Callback
+        if (updateSession) {
+          updateSession({
+            paymentStatus: "completed",
+            amountPaid: PRICE,
+            paymentId: response.razorpay_payment_id,
+          });
+        }
+        navigate("/grid");
+      },
+
+      theme: { color: "#F48B9A" },
+
+      // Enable UPI + QR payment
+      method: { upi: true },
+      upi: { type: "qr" },
+    };
+
+    const rzp = new window.Razorpay(options);
+    rzp.open();
+  };
 
   return (
     <div style={{ background: "#f6DDD8", height: "100vh", overflow: "hidden" }} className="flex items-center justify-center">
@@ -39,7 +72,8 @@ const Page2 = () => {
               </div>
               <p className="text-red-500 font-extrabold text-4xl">CASH</p>
             </div>
-            <div className="flex flex-col items-center space-y-6 cursor-pointer" onClick={() => navigate('/payment-qr')}>
+            <div className="flex flex-col items-center space-y-6 cursor-pointer"
+              onClick={openRazorpay}>
               <div className="w-32 h-32 bg-neutral-900 p-2 rounded-md">
                 {/* QR Code placeholder */}
                 <img src="/images/qr.png" alt="QR Code" />
@@ -73,7 +107,7 @@ const Page2 = () => {
           />
         </div>
       </div>
-    </div>
+    </div >
   );
 };
 

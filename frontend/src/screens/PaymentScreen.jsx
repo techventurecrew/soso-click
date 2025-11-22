@@ -2,28 +2,36 @@
  * PaymentScreen Component
  * 
  * Displays payment options for the photo session.
- * Users can choose between Cash payment or Online (QR code) payment.
+ * Users can choose between Cash payment or Online (Razorpay) payment.
  * 
  * Features:
  * - Displays payment amount (200)
  * - Cash payment option with money icon
- * - Online payment option with QR code icon
+ * - Online payment option with QR code icon - opens Razorpay directly
  * - Decorative teddy bears at corners
- * - QR code overlay modal for online payment
  * 
  * @param {Object} sessionData - Current session data including payment status
  * @param {Function} updateSession - Callback to update session data
  * @returns {JSX.Element} Payment selection screen
  */
-import React, { useState } from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 function PaymentScreen({ sessionData, updateSession }) {
   const navigate = useNavigate();
-  // State to control QR code overlay visibility
-  const [showQR, setShowQR] = useState(false);
+
   // Fixed price for photo session
   const PRICE = 200;
+
+  // Load Razorpay script on component mount
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.async = true;
+    document.body.appendChild(script);
+  }, []);
+
+
 
   /**
    * Handle Cash Payment
@@ -33,24 +41,6 @@ function PaymentScreen({ sessionData, updateSession }) {
     updateSession({ paymentStatus: 'completed', amountPaid: PRICE });
     // Small delay for better UX before navigation
     setTimeout(() => navigate('/grid'), 400);
-  };
-
-  /**
-   * Handle Online Payment Click
-   * Shows the QR code overlay modal for scanning
-   */
-  const handlePayOnlineClick = () => {
-    setShowQR(true);
-  };
-
-  /**
-   * Handle Online Payment Simulation
-   * Updates session with completed payment and navigates to grid selection
-   * In production, this would verify actual payment from payment gateway
-   */
-  const handleSimulateOnline = () => {
-    updateSession({ paymentStatus: 'completed', amountPaid: PRICE });
-    setTimeout(() => navigate('/grid'), 600);
   };
 
   return (
@@ -81,8 +71,8 @@ function PaymentScreen({ sessionData, updateSession }) {
             <div style={{ color: '#E05A57', fontSize: 28, fontWeight: 800, marginTop: 12 }}>CASH</div>
           </div>
 
-          {/* Online Payment Option */}
-          <div className="flex flex-col items-center cursor-pointer" onClick={handlePayOnlineClick}>
+          {/* Online Payment Option - Opens Razorpay */}
+          <div className="flex flex-col items-center cursor-pointer" onClick={openRazorpay}>
             {/* QR Code icon */}
             <img src="/images/qr.png" alt="qr" style={{ width: 140, height: 140, objectFit: 'contain' }} />
             {/* Payment option label */}
@@ -95,27 +85,6 @@ function PaymentScreen({ sessionData, updateSession }) {
         <img src="/images/teddy_kiss.png" alt="teddy left" style={{ position: 'absolute', left: 8, bottom: -8, width: 140 }} />
         {/* Right bear: Holding money */}
         <img src="/images/teddy_money.png" alt="teddy right" style={{ position: 'absolute', right: 8, bottom: -8, width: 140 }} />
-
-        {/* QR Code Overlay Modal */}
-        {/* Displays when user selects Online payment option */}
-        {showQR && (
-          <div style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.4)' }}>
-            {/* Modal content panel */}
-            <div style={{ background: '#FFF7EE', padding: 28, borderRadius: 20, border: '4px solid #F4A3A3', textAlign: 'center' }}>
-              {/* Modal heading */}
-              <h3 style={{ color: '#6B2D9B', fontSize: 28, fontWeight: 800, marginBottom: 12 }}>Scan to Pay {PRICE}</h3>
-              {/* QR Code image */}
-              <img src="/images/qr.png" alt="qr-large" style={{ width: 220, height: 220, objectFit: 'contain', marginBottom: 12 }} />
-              {/* Modal action buttons */}
-              <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
-                {/* Close button: Dismisses QR modal */}
-                <button onClick={() => setShowQR(false)} style={{ padding: '10px 18px', borderRadius: 12, border: '2px solid #F4A3A3', background: '#FFF', cursor: 'pointer' }}>Close</button>
-                {/* Simulate Payment button: For testing purposes */}
-                <button onClick={handleSimulateOnline} style={{ padding: '10px 18px', borderRadius: 12, background: '#FFB6C1', border: '2px solid #F48B9A', color: '#D83A4A', fontWeight: 700, cursor: 'pointer' }}>Simulate Payment</button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

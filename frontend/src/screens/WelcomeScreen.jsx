@@ -39,7 +39,7 @@ function WelcomeScreen({ updateSession }) {
     /* Main container with pink background matching SoSo Clicks theme */
     <div style={{ background: "#f6DDD8", height: "100vh", overflow: "hidden" }} className="flex items-center justify-center">
       {/* Content panel with cream background and coral-pink border */}
-      <FallingHearts />
+      {/* <FallingHearts /> */}
       <div
         className="relative w-full max-w-6xl rounded-3xl"
         style={{
